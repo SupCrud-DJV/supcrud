@@ -1,0 +1,18 @@
+{
+    "workspaceId": "UUID",
+    "referenceCode": "SC-WSX92-8H3K91",
+    "type": "P|Q|R|S",
+    "subject": "Asunto del ticket",
+    "description": "Descripción del ticket",
+    "status": "OPEN",
+    "attachments": [],
+    "events": [],
+    "otp": {
+        "codeHash": "",
+        "expiresAt": "",
+        "attempts": 0,
+        "used": false
+    },
+    "createdAt": "",
+    "updatedAt": ""
+}
