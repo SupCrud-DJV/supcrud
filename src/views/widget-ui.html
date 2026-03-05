@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SupCrud Widget</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #ffffff;
+      color: #1a1e35;
+      height: 100vh;
+      overflow: hidden;
+      font-size: 14px;
+    }
+
+    /* ── Container ── */
+    .widget {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      background: #ffffff;
+    }
+
+    /* ── Header ── */
+    .widget-header {
+      background: #6b5cff;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .header-icon {
+      width: 36px;
+      height: 36px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+
+    .header-text h2 {
+      font-size: 15px;
+      font-weight: 700;
+      color: #ffffff;
+    }
+
+    .header-text p {
+      font-size: 11px;
+      color: rgba(255,255,255,0.75);
+      margin-top: 1px;
+    }
+
+    .btn-close {
+      background: rgba(255,255,255,0.15);
+      border: none;
+      border-radius: 8px;
+      width: 30px;
+      height: 30px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 16px;
+      transition: background 0.2s;
+    }
+
+    .btn-close:hover { background: rgba(255,255,255,0.25); }
+
+    /* ── Body ── */
+    .widget-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+    }
+
+    /* ── Views ── */
+    .view { display: none; }
+    .view.active { display: block; }
+
+    /* ── Form ── */
+    .form-group {
+      margin-bottom: 14px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: #3d4466;
+      margin-bottom: 5px;
+    }
+
+    .form-input,
+    .form-textarea,
+    .form-select {
+      width: 100%;
+      padding: 9px 12px;
+      border: 1.5px solid #e8ebf2;
+      border-radius: 8px;
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      color: #1a1e35;
+      background: #fafbfc;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      outline: none;
+    }
+
+    .form-input::placeholder,
+    .form-textarea::placeholder { color: #b8bbd6; }
+
+    .form-input:focus,
+    .form-textarea:focus,
+    .form-select:focus {
+      border-color: #6b5cff;
+      background: #fff;
+      box-shadow: 0 0 0 3px rgba(107,92,255,0.1);
+    }
+
+    .form-textarea {
+      resize: none;
+      height: 90px;
+    }
+
+    /* ── Type selector ── */
+    .type-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+    }
+
+    .type-btn {
+      border: 1.5px solid #e8ebf2;
+      border-radius: 8px;
+      padding: 8px 4px;
+      background: #fafbfc;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .type-btn .type-letter {
+      display: block;
+      font-size: 16px;
+      font-weight: 700;
+      color: #6b7a99;
+    }
+
+    .type-btn .type-name {
+      display: block;
+      font-size: 9px;
+      color: #9ca3b8;
+      margin-top: 2px;
+    }
+
+    .type-btn:hover {
+      border-color: #6b5cff;
+      background: #f5f3ff;
+    }
+
+    .type-btn.selected {
+      border-color: #6b5cff;
+      background: #f5f3ff;
+    }
+
+    .type-btn.selected .type-letter { color: #6b5cff; }
+    .type-btn.selected .type-name   { color: #6b5cff; }
+
+    /* ── Submit button ── */
+    .btn-submit {
+      width: 100%;
+      padding: 11px;
+      background: #6b5cff;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: background 0.2s, transform 0.15s;
+      margin-top: 4px;
+    }
+
+    .btn-submit:hover  { background: #5a4be0; transform: translateY(-1px); }
+    .btn-submit:active { transform: scale(0.98); }
+    .btn-submit:disabled { background: #b8bbd6; cursor: not-allowed; transform: none; }
+
+    /* ── Spinner ── */
+    .spinner {
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(255,255,255,0.4);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Error message ── */
+    .error-msg {
+      background: #fff1f2;
+      border: 1px solid #fecdd3;
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 12px;
+      color: #dc2626;
+      margin-bottom: 14px;
+      display: none;
+    }
+
+    .error-msg.visible { display: block; }
+
+    /* ── Success view ── */
+    .success-view {
+      text-align: center;
+      padding: 20px 10px;
+    }
+
+    .success-icon {
+      width: 64px;
+      height: 64px;
+      background: #e5f9f1;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 16px;
+      font-size: 28px;
+    }
+
+    .success-view h3 {
+      font-size: 16px;
+      font-weight: 700;
+      color: #1a1e35;
+      margin-bottom: 8px;
+    }
+
+    .success-view p {
+      font-size: 12.5px;
+      color: #6b7a99;
+      line-height: 1.6;
+      margin-bottom: 20px;
+    }
+
+    .reference-box {
+      background: #f5f3ff;
+      border: 1.5px dashed #6b5cff;
+      border-radius: 10px;
+      padding: 14px;
+      margin-bottom: 20px;
+    }
+
+    .reference-box .ref-label {
+      font-size: 10px;
+      font-weight: 600;
+      color: #6b7a99;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 4px;
+    }
+
+    .reference-box .ref-code {
+      font-size: 20px;
+      font-weight: 700;
+      color: #6b5cff;
+      letter-spacing: 2px;
+    }
+
+    .reference-box .ref-hint {
+      font-size: 10px;
+      color: #9ca3b8;
+      margin-top: 4px;
+    }
+
+    .btn-new {
+      width: 100%;
+      padding: 10px;
+      background: #fff;
+      color: #6b5cff;
+      border: 1.5px solid #6b5cff;
+      border-radius: 8px;
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .btn-new:hover { background: #f5f3ff; }
+
+    /* ── Footer ── */
+    .widget-footer {
+      padding: 10px 20px;
+      text-align: center;
+      border-top: 1px solid #f0f2f8;
+      flex-shrink: 0;
+    }
+
+    .widget-footer span {
+      font-size: 10px;
+      color: #b8bbd6;
+    }
+
+    .widget-footer strong {
+      color: #6b5cff;
+    }
+
+    /* ── Scrollbar ── */
+    .widget-body::-webkit-scrollbar { width: 4px; }
+    .widget-body::-webkit-scrollbar-track { background: transparent; }
+    .widget-body::-webkit-scrollbar-thumb { background: #e8ebf2; border-radius: 4px; }
+  </style>
+</head>
+<body>
+
+<div class="widget">
+
+  <!-- Header -->
+  <div class="widget-header">
+    <div class="header-left">
+      <div class="header-icon">🎧</div>
+      <div class="header-text">
+        <h2>Support</h2>
+        <p>We typically reply within minutes</p>
+      </div>
+    </div>
+    <button class="btn-close" id="btnClose" title="Close">✕</button>
+  </div>
+
+  <!-- Body -->
+  <div class="widget-body">
+
+    <!-- VIEW: Form -->
+    <div class="view active" id="viewForm">
+
+      <div class="error-msg" id="errorMsg">
+        Something went wrong. Please try again.
+      </div>
+
+      <!-- Email -->
+      <div class="form-group">
+        <label class="form-label" for="inputEmail">Your email *</label>
+        <input type="email" id="inputEmail" class="form-input" placeholder="you@example.com" />
+      </div>
+
+      <!-- Subject -->
+      <div class="form-group">
+        <label class="form-label" for="inputSubject">Subject *</label>
+        <input type="text" id="inputSubject" class="form-input" placeholder="Brief summary of your request" />
+      </div>
+
+      <!-- Description -->
+      <div class="form-group">
+        <label class="form-label" for="inputDescription">Description *</label>
+        <textarea id="inputDescription" class="form-textarea" placeholder="Describe your request in detail..."></textarea>
+      </div>
+
+      <!-- Type -->
+      <div class="form-group">
+        <label class="form-label">Type *</label>
+        <div class="type-grid">
+          <button class="type-btn" data-type="P">
+            <span class="type-letter">P</span>
+            <span class="type-name">Petition</span>
+          </button>
+          <button class="type-btn" data-type="Q">
+            <span class="type-letter">Q</span>
+            <span class="type-name">Complaint</span>
+          </button>
+          <button class="type-btn" data-type="R">
+            <span class="type-letter">R</span>
+            <span class="type-name">Claim</span>
+          </button>
+          <button class="type-btn" data-type="S">
+            <span class="type-letter">S</span>
+            <span class="type-name">Suggestion</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Submit -->
+      <button class="btn-submit" id="btnSubmit">
+        Send Request
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+          <polyline points="12 5 19 12 12 19"></polyline>
+        </svg>
+      </button>
+
+    </div>
+
+    <!-- VIEW: Success -->
+    <div class="view" id="viewSuccess">
+      <div class="success-view">
+        <div class="success-icon">✅</div>
+        <h3>Request submitted!</h3>
+        <p>Your request has been received. Save your reference code to track your ticket status.</p>
+
+        <div class="reference-box">
+          <div class="ref-label">Reference Code</div>
+          <div class="ref-code" id="refCode">—</div>
+          <div class="ref-hint">Use this code to check your ticket status</div>
+        </div>
+
+        <button class="btn-new" id="btnNew">Submit another request</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Footer -->
+  <div class="widget-footer">
+    <span>Powered by <strong>SupCrud</strong> by Crudzaso</span>
+  </div>
+
+</div>
+
+<script>
+  // ── Get workspaceKey from URL ──
+  const params = new URLSearchParams(window.location.search);
+  const workspaceKey = params.get('workspaceKey');
+
+  // ── State ──
+  let selectedType = null;
+
+  // ── Elements ──
+  const viewForm    = document.getElementById('viewForm');
+  const viewSuccess = document.getElementById('viewSuccess');
+  const btnSubmit   = document.getElementById('btnSubmit');
+  const btnNew      = document.getElementById('btnNew');
+  const btnClose    = document.getElementById('btnClose');
+  const errorMsg    = document.getElementById('errorMsg');
+  const refCode     = document.getElementById('refCode');
+
+  const inputEmail       = document.getElementById('inputEmail');
+  const inputSubject     = document.getElementById('inputSubject');
+  const inputDescription = document.getElementById('inputDescription');
+
+  // ── Type buttons ──
+  document.querySelectorAll('.type-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      selectedType = btn.dataset.type;
+    });
+  });
+
+  // ── Close button — sends message to parent window ──
+  btnClose.addEventListener('click', () => {
+    window.parent.postMessage({ type: 'SUPCRUD_CLOSE' }, '*');
+  });
+
+  // ── Submit ──
+  btnSubmit.addEventListener('click', async () => {
+    errorMsg.classList.remove('visible');
+
+    const email       = inputEmail.value.trim();
+    const subject     = inputSubject.value.trim();
+    const description = inputDescription.value.trim();
+
+    // Basic validation
+    if (!email || !subject || !description || !selectedType) {
+      errorMsg.textContent = 'Please fill in all fields and select a type.';
+      errorMsg.classList.add('visible');
+      return;
+    }
+
+    if (!isValidEmail(email)) {
+      errorMsg.textContent = 'Please enter a valid email address.';
+      errorMsg.classList.add('visible');
+      return;
+    }
+
+    // Loading state
+    btnSubmit.disabled = true;
+    btnSubmit.innerHTML = '<div class="spinner"></div> Sending...';
+
+    try {
+      const response = await fetch('https://your-api.com/api/tickets', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          workspaceKey,
+          email,
+          subject,
+          description,
+          type: selectedType,
+        })
+      });
+
+      if (!response.ok) throw new Error('Server error');
+
+      const data = await response.json();
+
+      // Show success view with reference code
+      refCode.textContent = data.referenceCode || 'N/A';
+      showView('success');
+
+    } catch (err) {
+      errorMsg.textContent = 'Something went wrong. Please try again.';
+      errorMsg.classList.add('visible');
+    } finally {
+      btnSubmit.disabled = false;
+      btnSubmit.innerHTML = `
+        Send Request
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+          <polyline points="12 5 19 12 12 19"></polyline>
+        </svg>`;
+    }
+  });
+
+  // ── New ticket ──
+  btnNew.addEventListener('click', () => {
+    inputEmail.value = '';
+    inputSubject.value = '';
+    inputDescription.value = '';
+    selectedType = null;
+    document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('selected'));
+    errorMsg.classList.remove('visible');
+    showView('form');
+  });
+
+  // ── Helpers ──
+  function showView(name) {
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.getElementById(name === 'form' ? 'viewForm' : 'viewSuccess').classList.add('active');
+  }
+
+  function isValidEmail(email) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  }
+</script>
+
+</body>
+</html>
