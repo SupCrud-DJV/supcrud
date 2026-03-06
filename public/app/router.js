@@ -5,10 +5,13 @@ import { renderWorkspaceSelector }   from './pages/workspaceSelector.js';
 import { renderOwnerDashboard }      from './pages/ownerDashboard.js';
 import { renderWorkspaceDashboard }  from './pages/workspaceDashboard.js';
 import { renderLoader }              from './components/loader.js';
+import { renderAuthCallback } from './pages/authCallback.js';
 
+// add to your routes object
 const routes = {
   '#/'                  : renderLanding,
   '#/login'             : renderLogin,
+  '#/auth/callback'     : renderAuthCallback,   
   '#/select-workspace'  : renderWorkspaceSelector,
   '#/owner'             : renderOwnerDashboard,
   '#/dashboard'         : renderWorkspaceDashboard,

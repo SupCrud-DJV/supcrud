@@ -92,7 +92,8 @@ export function renderLogin(container) {
   // ── Google OAuth ──
   document.getElementById('googleBtn').addEventListener('click', () => {
     // Replace YOUR_GOOGLE_CLIENT_ID with your actual client ID from Google Cloud Console
-    const clientId    = 'supcrud-tickets-management';
+    window.location.href = '/api/auth/google';
+    const clientId    = 319936385861-hdsldo368a75ib7juj7gt90vu2kptct0.apps.googleusercontent.com;
     const redirectUri = encodeURIComponent(`${window.location.origin}/auth/google/callback`);
     const scope       = encodeURIComponent('openid email profile');
     window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=${scope}`;

@@ -1,11 +1,33 @@
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
+import authRoutes from './src/routes/auth.routes.js'
+import googleRoutes from './src/routes/google.routes.js';
+import session from 'express-session';
+import workspaceRoutes from './src/routes/workspace.routes.js';
+
+
+import { fileURLToPath } from 'url';
+import { dirname }       from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname  = dirname(__filename);
+
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 app.use(express.static('public')); // serves widget.js
+
+// Add this BEFORE your routes
+app.use(session({
+  secret:            process.env.SESSION_SECRET || 'supcrud_secret',
+  resave:            false,
+  saveUninitialized: false,
+  cookie:            { secure: false } // set true in production with HTTPS
+}));
+
+app.use('/api/workspaces', workspaceRoutes);
 
 // ── Routes ──
 // app.use('/api/auth',      require('./src/routes/auth.routes'));
@@ -24,13 +46,23 @@ app.get('/track', (req, res) => {
   res.sendFile(path.join(__dirname, 'src/views/public-ticket.html'));
 });
 
+// app.get('/', (req, res) => {
+//   res.sendFile(path.join(__dirname, 'public/views/landing.html'));
+// });
+
+
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'src/views/landing.html'));
+  res.redirect('/app');
 });
 
 // Serve the SPA shell for all /app/* routes
 app.get('/app', (req, res) => {
   res.sendFile(path.join(__dirname, 'public/app/index.html'));
 });
+
+// add this line with the other routes
+app.use('/api/auth', authRoutes);
+
+app.use('/api/auth', googleRoutes);
 
 app.listen(3000, () => console.log('SupCrud running on http://localhost:3000'));
