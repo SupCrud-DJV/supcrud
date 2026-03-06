@@ -6,11 +6,13 @@ import { renderOwnerDashboard }      from './pages/ownerDashboard.js';
 import { renderWorkspaceDashboard }  from './pages/workspaceDashboard.js';
 import { renderLoader }              from './components/loader.js';
 import { renderAuthCallback } from './pages/authCallback.js';
+import { renderRegister } from './pages/register.js';
 
 // add to your routes object
 const routes = {
   '#/'                  : renderLanding,
   '#/login'             : renderLogin,
+  '#/register'         : renderRegister,    
   '#/auth/callback'     : renderAuthCallback,   
   '#/select-workspace'  : renderWorkspaceSelector,
   '#/owner'             : renderOwnerDashboard,

@@ -45,6 +45,10 @@ export const login = async (req, res) => {
     if (!user)
       return res.status(401).json({ message: 'Invalid credentials' });
 
+    // 👇 Add this check — user registered with Google, has no password
+    if (!user.password)
+      return res.status(401).json({ message: 'This account uses Google Sign-In. Please use the Google button instead.' });
+
     const valid = await User.verifyPassword(password, user.password);
     if (!valid)
       return res.status(401).json({ message: 'Invalid credentials' });

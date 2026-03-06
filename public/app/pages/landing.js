@@ -21,7 +21,7 @@ export function renderLanding(container) {
           Embed SupCrud into any website and manage Petitions, Complaints, Claims and Suggestions — all in one place.
         </p>
         <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
-          <a href="#/login" class="btn btn-primary btn-lg">Get Started Free</a>
+          <a href="#/register" class="btn btn-primary btn-lg">Get Started Free</a>
           <a href="#/track" class="btn btn-ghost btn-lg">Track a Ticket</a>
         </div>
       </div>
