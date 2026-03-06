@@ -5,6 +5,7 @@ import authRoutes from './src/routes/auth.routes.js'
 import googleRoutes from './src/routes/google.routes.js';
 import session from 'express-session';
 import workspaceRoutes from './src/routes/workspace.routes.js';
+import userRoutes from './src/routes/user.routes.js';
 
 
 import { fileURLToPath } from 'url';
@@ -17,14 +18,14 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
-app.use(express.static('public')); // serves widget.js
+app.use(express.static('public'));
 
-// Add this BEFORE your routes
+
 app.use(session({
   secret:            process.env.SESSION_SECRET || 'supcrud_secret',
   resave:            false,
   saveUninitialized: false,
-  cookie:            { secure: false } // set true in production with HTTPS
+  cookie:            { secure: false }
 }));
 
 app.use('/api/workspaces', workspaceRoutes);
@@ -55,14 +56,15 @@ app.get('/', (req, res) => {
   res.redirect('/app');
 });
 
-// Serve the SPA shell for all /app/* routes
 app.get('/app', (req, res) => {
   res.sendFile(path.join(__dirname, 'public/app/index.html'));
 });
 
-// add this line with the other routes
+
 app.use('/api/auth', authRoutes);
 
 app.use('/api/auth', googleRoutes);
+
+app.use('/api/users', userRoutes);
 
 app.listen(3000, () => console.log('SupCrud running on http://localhost:3000'));

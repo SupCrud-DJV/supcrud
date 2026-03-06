@@ -1,12 +1,14 @@
 import { Auth } from './utils/auth.js';
-import { renderLanding }             from './pages/landing.js';
-import { renderLogin }               from './pages/login.js';
-import { renderWorkspaceSelector }   from './pages/workspaceSelector.js';
-import { renderOwnerDashboard }      from './pages/ownerDashboard.js';
-import { renderWorkspaceDashboard }  from './pages/workspaceDashboard.js';
-import { renderLoader }              from './components/loader.js';
+import { renderLanding } from './pages/landing.js';
+import { renderLogin } from './pages/login.js';
+import { renderWorkspaceSelector } from './pages/workspaceSelector.js';
+import { renderOwnerDashboard } from './pages/ownerDashboard.js';
+import { renderWorkspaceDashboard } from './pages/workspaceDashboard.js';
+import { renderLoader } from './components/loader.js';
 import { renderAuthCallback } from './pages/authCallback.js';
 import { renderRegister } from './pages/register.js';
+import { renderUserProfile } from './pages/userProfile.js';
+import { renderWorkspaceSettings } from './pages/workspaceSettings.js';
 
 // add to your routes object
 const routes = {
@@ -17,6 +19,8 @@ const routes = {
   '#/select-workspace'  : renderWorkspaceSelector,
   '#/owner'             : renderOwnerDashboard,
   '#/dashboard'         : renderWorkspaceDashboard,
+  '#/profile'          : renderUserProfile, 
+  '#/dashboard/settings'    : renderWorkspaceSettings, 
 };
 
 // Routes that require login

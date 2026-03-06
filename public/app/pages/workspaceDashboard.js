@@ -38,6 +38,8 @@ export function renderWorkspaceDashboard(container) {
                 : (user?.name?.[0] ?? 'U')}
             </div>
             <div class="sidebar-user-info">
+            
+              <div class="sidebar-user" id="profileBtn" style="cursor:pointer;" onclick="window.location.hash='#/profile'">
               <div class="sidebar-user-name">${user?.name ?? 'User'}</div>
               <div class="sidebar-user-role">${workspace?.role ?? 'Agent'}</div>
             </div>

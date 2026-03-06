@@ -1,4 +1,4 @@
-import db  from '../../config/db.js';
+import db     from '../../config/db.js';
 import bcrypt from 'bcryptjs';
 
 const User = {
@@ -26,6 +26,20 @@ const User = {
 
   async verifyPassword(plain, hashed) {
     return bcrypt.compare(plain, hashed);
+  },
+
+  async updatePassword(id, newPassword) {
+    const hashed = await bcrypt.hash(newPassword, 10);
+    await db.query('UPDATE users SET password = $1 WHERE id = $2', [hashed, id]);
+  },
+
+  async getRoleInWorkspace(userId, workspaceId) {
+    const { rows } = await db.query(
+      `SELECT role FROM workspace_users
+       WHERE user_id = $1 AND workspace_id = $2`,
+      [userId, workspaceId]
+    );
+    return rows[0]?.role || null;
   }
 
 };
