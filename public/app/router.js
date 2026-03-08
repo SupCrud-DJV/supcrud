@@ -9,22 +9,30 @@ import { renderAuthCallback } from './pages/authCallback.js';
 import { renderRegister } from './pages/register.js';
 import { renderUserProfile } from './pages/userProfile.js';
 import { renderWorkspaceSettings } from './pages/workspaceSettings.js';
+import { renderTickets } from './pages/tickets.js';
+import { renderTicketDetail } from './pages/ticketDetail.js';
 
-// add to your routes object
 const routes = {
-  '#/'                  : renderLanding,
-  '#/login'             : renderLogin,
-  '#/register'         : renderRegister,    
-  '#/auth/callback'     : renderAuthCallback,   
-  '#/select-workspace'  : renderWorkspaceSelector,
-  '#/owner'             : renderOwnerDashboard,
-  '#/dashboard'         : renderWorkspaceDashboard,
-  '#/profile'          : renderUserProfile, 
-  '#/dashboard/settings'    : renderWorkspaceSettings, 
+  '#/'                   : renderLanding,
+  '#/login'              : renderLogin,
+  '#/register'           : renderRegister,
+  '#/auth/callback'      : renderAuthCallback,
+  '#/select-workspace'   : renderWorkspaceSelector,
+  '#/owner'              : renderOwnerDashboard,
+  '#/dashboard'          : renderWorkspaceDashboard,
+  '#/dashboard/tickets'  : renderTickets,          
+  '#/dashboard/settings' : renderWorkspaceSettings,
+  '#/profile'            : renderUserProfile,
 };
 
 // Routes that require login
-const protectedRoutes = ['#/select-workspace', '#/owner', '#/dashboard'];
+const protectedRoutes = [
+  '#/select-workspace',
+  '#/owner',
+  '#/dashboard',
+  '#/profile',
+  '#/tickets/',        
+];
 
 export function initRouter() {
   window.addEventListener('hashchange', handleRoute);
@@ -35,23 +43,26 @@ function handleRoute() {
   const hash = window.location.hash || '#/';
   const app  = document.getElementById('app');
 
-  // Guard: protected routes
-  if (protectedRoutes.includes(hash) && !Auth.isLoggedIn()) {
+  if (protectedRoutes.some(r => hash.startsWith(r)) && !Auth.isLoggedIn()) {
     window.location.hash = '#/login';
     return;
   }
 
-  // Guard: already logged in, redirect away from login
   if (hash === '#/login' && Auth.isLoggedIn()) {
     const workspace = Auth.getWorkspace();
     window.location.hash = workspace ? '#/dashboard' : '#/select-workspace';
     return;
   }
 
-  const render = routes[hash];
+  if (hash.startsWith('#/tickets/')) {
+    renderLoader(app);
+    setTimeout(() => renderTicketDetail(app), 100);
+    return;
+  }
 
+  const render = routes[hash];
   if (render) {
-    renderLoader(app); // show loader briefly
+    renderLoader(app);
     setTimeout(() => render(app), 100);
   } else {
     app.innerHTML = `

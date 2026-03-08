@@ -4,8 +4,13 @@ const BASE_URL = 'http://localhost:3000/api';
 
 async function request(method, path, body = null) {
   const headers = { 'Content-Type': 'application/json' };
+
   const token = Auth.getToken();
   if (token) headers['Authorization'] = `Bearer ${token}`;
+
+  // ✅ Always send workspace id so backend knows which workspace
+  const workspace = Auth.getWorkspace();
+  if (workspace) headers['x-workspace-id'] = workspace.id;
 
   const options = { method, headers };
   if (body) options.body = JSON.stringify(body);
@@ -24,8 +29,8 @@ async function request(method, path, body = null) {
 }
 
 export const api = {
-  get:    (path)         => request('GET',    path),
-  post:   (path, body)   => request('POST',   path, body),
-  put:    (path, body)   => request('PUT',    path, body),
-  delete: (path)         => request('DELETE', path),
+  get: (path) => request('GET',    path),
+  post: (path, body) => request('POST',   path, body),
+  put: (path, body) => request('PUT',    path, body),
+  delete: (path) => request('DELETE', path),
 };
