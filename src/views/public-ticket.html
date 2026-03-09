@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Track Ticket | SupCrud by Crudzaso</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background: #f5f7fb;
+      color: #1e2a3b;
+    }
+    .card {
+      width: min(92vw, 520px);
+      background: #fff;
+      border: 1px solid #dde5ef;
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 10px 25px rgba(12, 33, 64, 0.08);
+    }
+    h1 {
+      margin: 0 0 8px;
+      font-size: 22px;
+    }
+    p {
+      margin: 0;
+      color: #5d6d84;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    label {
+      display: block;
+      margin-top: 18px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #394b63;
+    }
+    input {
+      width: 100%;
+      box-sizing: border-box;
+      margin-top: 8px;
+      padding: 11px 12px;
+      border-radius: 8px;
+      border: 1px solid #c8d3e1;
+      font-size: 14px;
+    }
+    button {
+      width: 100%;
+      margin-top: 12px;
+      padding: 11px 12px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 700;
+      color: #fff;
+      background: #4f46e5;
+      cursor: pointer;
+    }
+    .note {
+      margin-top: 14px;
+      font-size: 12px;
+      color: #5d6d84;
+      background: #edf2ff;
+      border: 1px solid #cfdbff;
+      border-radius: 8px;
+      padding: 10px;
+    }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <h1>Track your ticket</h1>
+    <p>SupCrud by Crudzaso</p>
+
+    <label for="referenceCode">Reference code</label>
+    <input id="referenceCode" type="text" placeholder="SC-XXXX-XXXX" autocomplete="off" />
+    <button id="trackBtn" type="button">Check status</button>
+
+    <div class="note" id="note">
+      Public tracking API is pending integration in this branch. This page is a temporary UI scaffold.
+    </div>
+  </main>
+
+  <script>
+    document.getElementById('trackBtn').addEventListener('click', () => {
+      const code = document.getElementById('referenceCode').value.trim();
+      const note = document.getElementById('note');
+      if (!code) {
+        note.textContent = 'Please enter a reference code.';
+        return;
+      }
+      note.textContent = `Tracking endpoint is not wired yet. Received code: ${code}`;
+    });
+  </script>
+</body>
+</html>

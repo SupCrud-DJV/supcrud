@@ -1,0 +1,127 @@
+const sidebar = document.getElementById("sidebar");
+const toggle = document.getElementById("sidebar-toggle");
+const overlay = document.getElementById("sidebar-overlay");
+
+toggle.addEventListener("click", () => {
+  sidebar.classList.toggle("-translate-x-full");
+  overlay.classList.toggle("hidden");
+});
+
+overlay.addEventListener("click", () => {
+  sidebar.classList.add("-translate-x-full");
+  overlay.classList.add("hidden");
+});
+
+
+
+import "../src/assets/styles/theme";
+import Layout from "../views/LoginView.js";
+import Aside from "../src/components/aside/aside.js"
+
+
+class App {
+  constructor() {
+    this.app = document.getElementById("app");
+    this.currentView = null;
+    this.user = getCurrentUser();
+    this.aside = new Navbar(router);
+    this.currentParams = {};
+    this.init();
+  }
+
+  init() {
+    const user = getCurrentUser();
+    this.user = user;
+
+    const params = new URLSearchParams(window.location.search);
+    const githubSuccess = params.get("github");
+    const githubError = params.get("error");
+
+    if (githubSuccess === "success" || githubError) {
+      window.history.replaceState({}, "", "/");
+      if (!isAuthenticated()) {
+        this.navigate("login");
+        return;
+      }
+      this.navigate("profile", {
+        githubSuccess: githubSuccess === "success",
+        githubUsername: params.get("username"),
+        githubError: githubError,
+      });
+      return;
+    }
+
+    if (!isAuthenticated()) {
+      this.navigate("login");
+      return;
+    }
+    console.log("USER FROM STORAGE:", this.user);
+    console.log("ROLE:", this.user?.role);
+
+    console.log("User:", this.user);
+    console.log("Role:", this.user?.role);
+    console.log("Authenticated:", isAuthenticated());
+    switch (this.user?.role) {
+      case "ADMIN":
+        this.navigate("dashboard");
+        break;
+      case "CODER":
+        console.log("hello");
+        this.navigate("coderHome");
+        break;
+      default:
+        this.navigate("login");
+    }
+  }
+
+  navigate(route, params = {}) {
+    this.app.innerHTML = "";
+    this.currentRoute = route;
+    this.currentParams = params;
+
+    switch (route) {
+      case "login":
+        this.currentView = new LoginView(this);
+        break;
+      case "dashboard":
+        this.currentView = new DashboardView(this);
+        break;
+      case "events":
+        this.currentView = new EventsView(this);
+        break;
+      case "events/create":
+        this.currentView = new CreateEvent(this);
+        break;
+      case "details":
+        this.currentView = new EventDetails(this, params);
+        break;
+      case "projects":
+        this.currentView = new Teams(this);
+        break;
+      case "ranking":
+        this.currentView = new Ranking(this);
+        break;
+      case "coderHome":
+        this.currentView = new coderHome(this);
+        this.currentView.init();
+        return;
+      case "projectSettings":
+        this.currentView = new ProjectSettings(this, params);
+        break;
+      case "profile":
+        this.currentView = new ProfileView(this);
+        break;
+      default:
+        return this.navigate("login");
+    }
+
+    if (!this.currentView) {
+      console.error("No view created for route:", route);
+      return;
+    }
+    this.currentView.render();
+  }
+}
+
+new App();
+

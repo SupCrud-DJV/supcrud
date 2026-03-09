@@ -1,5 +1,5 @@
-function buildPrompt(ticket) {
-    return `Clasifica este ticket en JSON estricto:
+export function buildPrompt(ticket) {
+  return `Clasifica este ticket en JSON estricto:
 {
     "category": "",
     "priority": "",
@@ -10,5 +10,3 @@ Ticket:
 Asunto: ${ticket.subject}
 Descripción: ${ticket.description}`;
 }
-
-module.exports = { buildPrompt };

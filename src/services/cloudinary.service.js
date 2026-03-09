@@ -1,14 +1,15 @@
-const cloudinary = require("../config/cloudinary.config");
+import cloudinary from "../config/cloudinary.config.js";
 
-async function uploadFile(fileBuffer, folder) {
-    const result = await cloudinary.uploader.upload_stream({
-        folder
+export async function uploadFile(fileBuffer, folder) {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream({ folder }, (error, result) => {
+      if (error) return reject(error);
+      resolve(result);
     });
-    return result; // incluye url y publicId
+    stream.end(fileBuffer);
+  });
 }
 
-async function deleteFile(publicId) {
-    return await cloudinary.uploader.destroy(publicId);
+export async function deleteFile(publicId) {
+  return cloudinary.uploader.destroy(publicId);
 }
-
-module.exports = { uploadFile, deleteFile };

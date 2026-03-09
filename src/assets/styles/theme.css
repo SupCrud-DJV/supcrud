@@ -1,0 +1,23 @@
+@import url('https://fonts.googleapis.com/css2?family=Sintony:wght@400;700&display=swap');
+:root {
+  --primary-color: #2563eb;
+  --secondary-color: #1e293b;
+  --background-color: #f8fafc;
+  --text-color: #0f172a;
+  --success: #16a34a;
+  --warning: #f59e0b;
+  --error: #dc2626;
+
+  
+  --font-primary: "Sintony", sans-serif;
+  --font-weight-regular: 400;
+  --font-weight-bold: 700;
+}
+
+* {
+  font-family: var(--font-primary);;
+}
+body {
+  background-color: var(--background-color);
+  color: var(--text-color);
+}
