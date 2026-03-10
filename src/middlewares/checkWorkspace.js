@@ -3,7 +3,11 @@ import User from "../models/sql/User.js";
 
 export default async function checkWorkspace(req, res, next) {
   const workspaceId =
-    req.header("x-workspace-id") || req.query.workspaceId || req.body.workspaceId;
+    req.header("x-workspace-id") ||
+    req.query.workspaceId ||
+    req.body.workspaceId ||
+    req.params?.workspaceId ||
+    (req.baseUrl && req.baseUrl.startsWith('/api/workspaces') ? req.params?.id : undefined);
   const workspaceKey =
     req.header("x-workspace-key") || req.query.workspaceKey || req.body.workspaceKey;
 

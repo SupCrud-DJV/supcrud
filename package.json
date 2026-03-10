@@ -27,6 +27,8 @@
     "openai": "^6.25.0",
     "path": "^0.12.7",
     "pg": "^8.20.0",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1",
     "vercel": "^50.27.1"
   },
   "devDependencies": {

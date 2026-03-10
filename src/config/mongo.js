@@ -16,10 +16,7 @@ export async function connectMongo() {
   if (connection) return connection;
 
   try {
-    connection = await mongoose.connect(MONGO_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
+    connection = await mongoose.connect(MONGO_URI);
     console.log(' MongoDB connected');
     return connection;
   } catch (err) {

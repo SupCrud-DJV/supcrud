@@ -4,7 +4,7 @@ import { buildPrompt } from "../utils/aiPrompt.js";
 export async function analyzeTicket(ticketData, workspaceConfig) {
   const prompt = buildPrompt(ticketData);
   const response = await openai.chat.completions.create({
-    model: "gpt-4",
+    model: "gpt-4o-mini",
     messages: [{ role: "user", content: prompt }],
   });
 

@@ -45,7 +45,8 @@ export const getTickets = async (req, res) => {
 // ── GET /api/tickets/:id ──
 export const getTicket = async (req, res) => {
   try {
-    const ticket = await Ticket.findById(req.params.id);
+    const { id: workspaceId } = Auth_getWorkspace(req);
+    const ticket = await Ticket.findOne({ _id: req.params.id, workspace_id: workspaceId });
     if (!ticket) return res.status(404).json({ message: 'Ticket not found' });
     res.json({ ticket });
   } catch (err) {
@@ -99,6 +100,10 @@ export const getPublicTicket = async (req, res) => {
     const ticket = await Ticket.findOne({ reference_code: referenceCode }).lean();
     if (!ticket) return res.status(404).json({ message: 'Ticket not found' });
 
+    const workspace = await Workspace.findById(ticket.workspace_id);
+    if (!workspace || workspace.status !== 'ACTIVE')
+      return res.status(403).json({ message: 'Workspace not found or suspended' });
+
     return res.json({
       referenceCode: ticket.reference_code,
       status: ticket.status,
@@ -123,6 +128,10 @@ export const requestOtp = async (req, res) => {
 
     const ticket = await Ticket.findOne({ reference_code: referenceCode });
     if (!ticket) return res.status(404).json({ message: 'Ticket not found' });
+
+    const workspace = await Workspace.findById(ticket.workspace_id);
+    if (!workspace || workspace.status !== 'ACTIVE')
+      return res.status(403).json({ message: 'Workspace not found or suspended' });
 
     if (ticket.email.toLowerCase() !== email.toLowerCase()) {
       return res.status(403).json({ message: 'Email does not match' });
@@ -185,6 +194,10 @@ export const verifyOtp = async (req, res) => {
     const ticket = await Ticket.findOne({ reference_code: referenceCode }).lean();
     if (!ticket) return res.status(404).json({ message: 'Ticket not found' });
 
+    const workspace = await Workspace.findById(ticket.workspace_id);
+    if (!workspace || workspace.status !== 'ACTIVE')
+      return res.status(403).json({ message: 'Workspace not found or suspended' });
+
     return res.json({
       referenceCode: ticket.reference_code,
       status: ticket.status,
@@ -213,8 +226,10 @@ export const updateStatus = async (req, res) => {
     if (!VALID_STATUS.includes(status))
       return res.status(400).json({ message: 'Invalid status' });
 
-    const ticket = await Ticket.findByIdAndUpdate(
-      req.params.id,
+    const { id: workspaceId } = Auth_getWorkspace(req);
+
+    const ticket = await Ticket.findOneAndUpdate(
+      { _id: req.params.id, workspace_id: workspaceId },
       {
         status,
         $push: {
@@ -239,9 +254,10 @@ export const updateStatus = async (req, res) => {
 export const assignTicket = async (req, res) => {
   try {
     const { agentId } = req.body;
+    const { id: workspaceId } = Auth_getWorkspace(req);
 
-    const ticket = await Ticket.findByIdAndUpdate(
-      req.params.id,
+    const ticket = await Ticket.findOneAndUpdate(
+      { _id: req.params.id, workspace_id: workspaceId },
       {
         assigned_to: agentId,
         $push: {
@@ -269,8 +285,10 @@ export const addMessage = async (req, res) => {
     const { content } = req.body;
     if (!content) return res.status(400).json({ message: 'Content is required' });
 
-    const ticket = await Ticket.findByIdAndUpdate(
-      req.params.id,
+    const { id: workspaceId } = Auth_getWorkspace(req);
+
+    const ticket = await Ticket.findOneAndUpdate(
+      { _id: req.params.id, workspace_id: workspaceId },
       {
         $push: {
           messages: { content, created_by: req.user.id },
@@ -288,9 +306,9 @@ export const addMessage = async (req, res) => {
   }
 };
 
-// Helper to get workspace from token
+// Helper to get workspace from middleware or headers
 function Auth_getWorkspace(req) {
-  const workspaceId = req.headers['x-workspace-id'];
+  const workspaceId = req.workspace?.id || req.headers['x-workspace-id'];
   if (!workspaceId) throw new Error('No workspace selected');
   return { id: workspaceId };
 }
