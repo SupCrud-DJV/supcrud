@@ -331,8 +331,8 @@ function renderSidebar(workspace) {
         ${[
           { icon: '📊', label: 'Dashboard',  route: '#/dashboard' },
           { icon: '🎫', label: 'Tickets',    route: '#/dashboard/tickets' },
-          { icon: '👥', label: 'Agentes',    route: '#/dashboard/agents' },
-          { icon: '🔌', label: 'Add-ons',    route: '#/dashboard/addons' },
+          { icon: '👥', label: 'Agentes',    route: '#/dashboard' },
+          { icon: '🔌', label: 'Add-ons',    route: '#/dashboard' },
           { icon: '⚙️',  label: 'Settings',   route: '#/dashboard/settings' },
         ].map(item => `
           <button class="nav-item ${window.location.hash.startsWith(item.route) ? 'active' : ''}" data-route="${item.route}">

@@ -10,7 +10,7 @@ import { renderRegister } from './pages/register.js';
 import { renderUserProfile } from './pages/userProfile.js';
 import { renderWorkspaceSettings } from './pages/workspaceSettings.js';
 import { renderTickets } from './pages/tickets.js';
-import { renderTicketDetail } from './pages/ticketDetail.js';
+import { renderTicketDetail } from './pages/ticketDetails.js';
 
 const routes = {
   '#/'                   : renderLanding,
