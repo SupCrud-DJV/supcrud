@@ -12,6 +12,10 @@ async function request(method, path, body = null) {
   const workspace = Auth.getWorkspace();
   if (workspace) headers['x-workspace-id'] = workspace.id;
 
+  // ✅ Always send workspace id so backend knows which workspace
+  const workspace = Auth.getWorkspace();
+  if (workspace) headers['x-workspace-id'] = workspace.id;
+
   const options = { method, headers };
   if (body) options.body = JSON.stringify(body);
 
