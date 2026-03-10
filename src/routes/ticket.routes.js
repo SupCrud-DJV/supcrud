@@ -1,16 +1,20 @@
 import { Router }        from 'express';
 import authMiddleware    from '../middlewares/auth.js';
+import upload            from '../middlewares/upload.js';
 import {
   getTickets, getTicket,
   createPublicTicket,
   updateStatus, assignTicket,
-  addMessage
+  addMessage, uploadAttachment
 } from '../controllers/ticket.controller.js';
 
 const router = Router();
 
 // Public — no auth (from widget)
 router.post('/public', createPublicTicket);
+
+// Permitir subida sin auth temporalmente para que puedas probar
+router.post('/:id/attachments', upload.single('file'), uploadAttachment);
 
 // Protected
 router.get ('/',              authMiddleware, getTickets);

@@ -1,6 +1,8 @@
 import Ticket    from '../models/mongo/Tickets.js';
 import Workspace from '../models/sql/Workspace.js';
 import { generateReferenceCode } from '../utils/generateReferenceCode.js';
+import cloudinary from '../config/cloudinary.js';
+import streamifier from 'streamifier';
 
 // ── GET /api/tickets?page=1&limit=10&status=OPEN&type=P ──
 export const getTickets = async (req, res) => {
@@ -157,6 +159,66 @@ export const addMessage = async (req, res) => {
     res.json({ ticket });
 
   } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// ── POST /api/tickets/:id/attachments ──
+export const uploadAttachment = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'No file provided' });
+    }
+
+    const { id } = req.params;
+    const ticket = await Ticket.findById(id);
+    if (!ticket) {
+      return res.status(404).json({ message: 'Ticket not found' });
+    }
+
+    // Usar variable de req.user.id si existe (logueado), si no, asumimos "publico" (ID 0)
+    const userId = req.user ? req.user.id : 0;
+
+    // Subir a Cloudinary con stream
+    const uploadStream = cloudinary.uploader.upload_stream(
+      { 
+        folder: `supcrud_tickets/${ticket.reference_code}`,
+        resource_type: 'auto'
+      },
+      async (error, result) => {
+        if (error) {
+          console.error('Cloudinary Error:', error);
+          return res.status(500).json({ message: 'Cloudinary upload failed', error });
+        }
+
+        // Agregar al array de attachments en Mongo
+        ticket.attachments.push({
+          url: result.secure_url,
+          public_id: result.public_id,
+          original_name: req.file.originalname,
+          size: req.file.size
+        });
+
+        // Registrar el evento
+        ticket.events.push({
+          type: 'ATTACHMENT_ADDED',
+          description: `Archivo agregado: ${req.file.originalname}`,
+          created_by: userId
+        });
+
+        await ticket.save();
+
+        res.status(200).json({ 
+          message: 'Attachment uploaded successfully', 
+          ticket 
+        });
+      }
+    );
+
+    streamifier.createReadStream(req.file.buffer).pipe(uploadStream);
+
+  } catch (err) {
+    console.error(err);
     res.status(500).json({ message: 'Server error' });
   }
 };

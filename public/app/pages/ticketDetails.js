@@ -1,15 +1,15 @@
-import { api }      from '../utils/api.js';
-import { Auth }     from '../utils/auth.js';
+import { api } from '../utils/api.js';
+import { Auth } from '../utils/auth.js';
 import { navigate } from '../router.js';
 
 const STATUS_COLORS = {
-  OPEN:        'badge-primary',
+  OPEN: 'badge-primary',
   IN_PROGRESS: 'badge-warning',
-  RESOLVED:    'badge-success',
-  CLOSED:      'badge-neutral',
+  RESOLVED: 'badge-success',
+  CLOSED: 'badge-neutral',
 };
 
-const TYPE_LABELS     = { P: 'Petition', Q: 'Complaint', R: 'Claim', S: 'Suggestion' };
+const TYPE_LABELS = { P: 'Petition', Q: 'Complaint', R: 'Claim', S: 'Suggestion' };
 const PRIORITY_COLORS = { LOW: 'badge-neutral', MEDIUM: 'badge-warning', HIGH: 'badge-error' };
 
 export async function renderTicketDetail(container) {
@@ -72,7 +72,7 @@ async function loadTicket(ticketId, workspace) {
               <div>
                 <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px;">
                   <span style="font-family:monospace;font-size:12px;font-weight:700;color:var(--primary);">${ticket.reference_code}</span>
-                  <span class="badge ${STATUS_COLORS[ticket.status]}">${ticket.status.replace('_',' ')}</span>
+                  <span class="badge ${STATUS_COLORS[ticket.status]}">${ticket.status.replace('_', ' ')}</span>
                   <span class="badge ${PRIORITY_COLORS[ticket.priority]}">${ticket.priority}</span>
                   <span class="badge badge-neutral">${TYPE_LABELS[ticket.type]}</span>
                 </div>
@@ -86,6 +86,20 @@ async function loadTicket(ticketId, workspace) {
             <div style="background:var(--bg);border-radius:var(--radius-md);padding:16px;font-size:14px;line-height:1.7;color:var(--text);">
               ${ticket.description}
             </div>
+            ${ticket.attachments && ticket.attachments.length > 0 ? `
+              <div style="margin-top:16px;">
+                <div style="font-size:13px;font-weight:700;margin-bottom:8px;">📎 Attachments</div>
+                <div style="display:flex;flex-wrap:wrap;gap:10px;">
+                  ${ticket.attachments.map(att => `
+                    <a href="${att.url}" target="_blank" style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg-white);border-radius:var(--radius-md);border:1px solid var(--border);text-decoration:none;color:var(--text);font-size:12px;transition:box-shadow 0.2s;">
+                      <span style="font-size:16px;">📄</span>
+                      <span style="max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${att.original_name}">${att.original_name}</span>
+                      <span style="color:var(--text-muted);font-size:10px;">(${(att.size / 1024).toFixed(1)}KB)</span>
+                    </a>
+                  `).join('')}
+                </div>
+              </div>
+            ` : ''}
           </div>
 
           <!-- Conversation -->
@@ -94,8 +108,8 @@ async function loadTicket(ticketId, workspace) {
 
             <div id="messagesList" style="display:flex;flex-direction:column;gap:12px;margin-bottom:20px;">
               ${ticket.messages.length === 0
-                ? `<div style="text-align:center;padding:24px;color:var(--text-muted);font-size:13px;">No messages yet. Be the first to reply!</div>`
-                : ticket.messages.map(m => `
+        ? `<div style="text-align:center;padding:24px;color:var(--text-muted);font-size:13px;">No messages yet. Be the first to reply!</div>`
+        : ticket.messages.map(m => `
                   <div style="background:var(--bg);border-radius:var(--radius-md);padding:14px;">
                     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
                       <div style="display:flex;align-items:center;gap:8px;">
@@ -130,7 +144,7 @@ async function loadTicket(ticketId, workspace) {
                     ${i < ticket.events.length - 1 ? `<div style="width:2px;flex:1;background:var(--border);margin-top:4px;"></div>` : ''}
                   </div>
                   <div style="padding-bottom:4px;">
-                    <div style="font-size:12px;font-weight:700;color:var(--text);">${e.type.replace(/_/g,' ')}</div>
+                    <div style="font-size:12px;font-weight:700;color:var(--text);">${e.type.replace(/_/g, ' ')}</div>
                     <div style="font-size:11px;color:var(--text-muted);">${e.description}</div>
                     <div style="font-size:10px;color:var(--text-light);margin-top:2px;">${new Date(e.created_at).toLocaleString('es-CO')}</div>
                   </div>
@@ -143,14 +157,23 @@ async function loadTicket(ticketId, workspace) {
         <!-- RIGHT: sidebar actions -->
         <div style="display:flex;flex-direction:column;gap:16px;">
 
+          <!-- Upload Attachment -->
+          <div class="card">
+            <div class="card-title" style="margin-bottom:12px;">📤 Upload Attachment</div>
+            <div class="alert alert-error"   id="uploadError"   style="display:none;"></div>
+            <div class="alert alert-success" id="uploadSuccess" style="display:none;"></div>
+            <input type="file" id="fileInput" class="input-field" style="margin-bottom:10px;padding:6px;"/>
+            <button class="btn btn-outline btn-full" id="uploadBtn">Upload File</button>
+          </div>
+
           <!-- Change status -->
           <div class="card">
             <div class="card-title" style="margin-bottom:12px;">🔄 Change Status</div>
             <div class="alert alert-error"   id="statusError"   style="display:none;"></div>
             <div class="alert alert-success" id="statusSuccess" style="display:none;"></div>
             <select id="statusSelect" class="input-field" style="margin-bottom:10px;">
-              ${['OPEN','IN_PROGRESS','RESOLVED','CLOSED'].map(s => `
-                <option value="${s}" ${ticket.status === s ? 'selected' : ''}>${s.replace('_',' ')}</option>
+              ${['OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED'].map(s => `
+                <option value="${s}" ${ticket.status === s ? 'selected' : ''}>${s.replace('_', ' ')}</option>
               `).join('')}
             </select>
             <button class="btn btn-primary btn-full" id="updateStatusBtn">Update Status</button>
@@ -161,8 +184,8 @@ async function loadTicket(ticketId, workspace) {
             <div class="card-title" style="margin-bottom:4px;">👤 Assigned To</div>
             <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">
               ${assignedAgent
-                ? `Currently: <strong>${assignedAgent.name}</strong>`
-                : 'Not assigned yet'}
+        ? `Currently: <strong>${assignedAgent.name}</strong>`
+        : 'Not assigned yet'}
             </div>
             <div class="alert alert-error"   id="assignError"   style="display:none;"></div>
             <div class="alert alert-success" id="assignSuccess" style="display:none;"></div>
@@ -181,11 +204,11 @@ async function loadTicket(ticketId, workspace) {
             <div class="card-title" style="margin-bottom:12px;">ℹ️ Info</div>
             <div style="display:flex;flex-direction:column;gap:10px;">
               ${[
-                { label: 'Created',     value: new Date(ticket.createdAt).toLocaleDateString('es-CO') },
-                { label: 'Updated',     value: new Date(ticket.updatedAt).toLocaleDateString('es-CO') },
-                { label: 'Messages',    value: ticket.messages.length },
-                { label: 'Events',      value: ticket.events.length },
-              ].map(item => `
+        { label: 'Created', value: new Date(ticket.createdAt).toLocaleDateString('es-CO') },
+        { label: 'Updated', value: new Date(ticket.updatedAt).toLocaleDateString('es-CO') },
+        { label: 'Messages', value: ticket.messages.length },
+        { label: 'Events', value: ticket.events.length },
+      ].map(item => `
                 <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;">
                   <span style="color:var(--text-muted);">${item.label}</span>
                   <span style="font-weight:600;">${item.value}</span>
@@ -198,20 +221,20 @@ async function loadTicket(ticketId, workspace) {
 
     // ── Send reply ──
     document.getElementById('sendReplyBtn').addEventListener('click', async () => {
-      const content   = document.getElementById('replyContent').value.trim();
-      const errorEl   = document.getElementById('replyError');
+      const content = document.getElementById('replyContent').value.trim();
+      const errorEl = document.getElementById('replyError');
       const successEl = document.getElementById('replySuccess');
-      const btn       = document.getElementById('sendReplyBtn');
+      const btn = document.getElementById('sendReplyBtn');
 
       errorEl.style.display = successEl.style.display = 'none';
 
       if (!content) {
-        errorEl.textContent   = 'Please write a reply first.';
+        errorEl.textContent = 'Please write a reply first.';
         errorEl.style.display = 'block';
         return;
       }
 
-      btn.disabled  = true;
+      btn.disabled = true;
       btn.innerHTML = '<div class="spinner spinner-white"></div> Sending...';
 
       try {
@@ -219,7 +242,7 @@ async function loadTicket(ticketId, workspace) {
 
         // Append new message to list
         const messagesList = document.getElementById('messagesList');
-        const lastMessage  = updated.messages[updated.messages.length - 1];
+        const lastMessage = updated.messages[updated.messages.length - 1];
 
         // Remove empty state if present
         const emptyState = messagesList.querySelector('div[style*="text-align:center"]');
@@ -240,69 +263,108 @@ async function loadTicket(ticketId, workspace) {
         messagesList.appendChild(msgEl);
         document.getElementById('replyContent').value = '';
 
-        successEl.textContent   = '✅ Reply sent!';
+        successEl.textContent = '✅ Reply sent!';
         successEl.style.display = 'block';
         setTimeout(() => successEl.style.display = 'none', 3000);
 
       } catch (err) {
-        errorEl.textContent   = err.message;
+        errorEl.textContent = err.message;
         errorEl.style.display = 'block';
       } finally {
-        btn.disabled  = false;
+        btn.disabled = false;
         btn.innerHTML = 'Send Reply';
       }
     });
 
     // ── Update status ──
     document.getElementById('updateStatusBtn').addEventListener('click', async () => {
-      const status    = document.getElementById('statusSelect').value;
-      const errorEl   = document.getElementById('statusError');
+      const status = document.getElementById('statusSelect').value;
+      const errorEl = document.getElementById('statusError');
       const successEl = document.getElementById('statusSuccess');
-      const btn       = document.getElementById('updateStatusBtn');
+      const btn = document.getElementById('updateStatusBtn');
 
       errorEl.style.display = successEl.style.display = 'none';
-      btn.disabled  = true;
+      btn.disabled = true;
       btn.innerHTML = '<div class="spinner spinner-white"></div>';
 
       try {
         await api.put(`/tickets/${ticketId}/status`, { status });
-        successEl.textContent   = `✅ Status updated to ${status.replace('_',' ')}`;
+        successEl.textContent = `✅ Status updated to ${status.replace('_', ' ')}`;
         successEl.style.display = 'block';
         setTimeout(() => successEl.style.display = 'none', 3000);
       } catch (err) {
-        errorEl.textContent   = err.message;
+        errorEl.textContent = err.message;
         errorEl.style.display = 'block';
       } finally {
-        btn.disabled  = false;
+        btn.disabled = false;
         btn.innerHTML = 'Update Status';
       }
     });
 
     // ── Assign agent ──
     document.getElementById('assignBtn').addEventListener('click', async () => {
-      const agentId   = document.getElementById('agentSelect').value;
-      const errorEl   = document.getElementById('assignError');
+      const agentId = document.getElementById('agentSelect').value;
+      const errorEl = document.getElementById('assignError');
       const successEl = document.getElementById('assignSuccess');
-      const btn       = document.getElementById('assignBtn');
+      const btn = document.getElementById('assignBtn');
 
       errorEl.style.display = successEl.style.display = 'none';
-      btn.disabled  = true;
+      btn.disabled = true;
       btn.innerHTML = '<div class="spinner spinner-white"></div>';
 
       try {
         await api.put(`/tickets/${ticketId}/assign`, { agentId: agentId || null });
         const agent = members.find(m => String(m.id) === String(agentId));
-        successEl.textContent   = agentId
+        successEl.textContent = agentId
           ? `✅ Assigned to ${agent?.name}`
           : '✅ Ticket unassigned';
         successEl.style.display = 'block';
         setTimeout(() => successEl.style.display = 'none', 3000);
       } catch (err) {
-        errorEl.textContent   = err.message;
+        errorEl.textContent = err.message;
         errorEl.style.display = 'block';
       } finally {
-        btn.disabled  = false;
+        btn.disabled = false;
         btn.innerHTML = 'Assign Agent';
+      }
+    });
+
+    // ── Upload Attachment ──
+    document.getElementById('uploadBtn')?.addEventListener('click', async () => {
+      const fileInput = document.getElementById('fileInput');
+      const errorEl = document.getElementById('uploadError');
+      const successEl = document.getElementById('uploadSuccess');
+      const btn = document.getElementById('uploadBtn');
+
+      errorEl.style.display = successEl.style.display = 'none';
+
+      if (!fileInput.files.length) {
+        errorEl.textContent = 'Please select a file to upload.';
+        errorEl.style.display = 'block';
+        return;
+      }
+
+      const file = fileInput.files[0];
+      const formData = new FormData();
+      formData.append('file', file);
+
+      btn.disabled = true;
+      btn.innerHTML = '<div class="spinner spinner-white"></div>';
+
+      try {
+        await api.post(`/tickets/${ticketId}/attachments`, formData);
+        successEl.textContent = '✅ File uploaded successfully!';
+        successEl.style.display = 'block';
+        setTimeout(() => {
+          successEl.style.display = 'none';
+          loadTicket(ticketId, workspace); // reload to show new attachment
+        }, 1500);
+      } catch (err) {
+        errorEl.textContent = err.message;
+        errorEl.style.display = 'block';
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = 'Upload File';
       }
     });
 
@@ -329,12 +391,12 @@ function renderSidebar(workspace) {
       <nav class="sidebar-nav">
         <div class="nav-section-label">Workspace</div>
         ${[
-          { icon: '📊', label: 'Dashboard',  route: '#/dashboard' },
-          { icon: '🎫', label: 'Tickets',    route: '#/dashboard/tickets' },
-          { icon: '👥', label: 'Agentes',    route: '#/dashboard' },
-          { icon: '🔌', label: 'Add-ons',    route: '#/dashboard' },
-          { icon: '⚙️',  label: 'Settings',   route: '#/dashboard/settings' },
-        ].map(item => `
+      { icon: '📊', label: 'Dashboard', route: '#/dashboard' },
+      { icon: '🎫', label: 'Tickets', route: '#/dashboard/tickets' },
+      { icon: '👥', label: 'Agentes', route: '#/dashboard' },
+      { icon: '🔌', label: 'Add-ons', route: '#/dashboard' },
+      { icon: '⚙️', label: 'Settings', route: '#/dashboard/settings' },
+    ].map(item => `
           <button class="nav-item ${window.location.hash.startsWith(item.route) ? 'active' : ''}" data-route="${item.route}">
             ${item.icon} ${item.label}
           </button>`).join('')}
@@ -357,8 +419,8 @@ function renderSidebar(workspace) {
 }
 
 function attachSidebarEvents() {
-  const sidebar   = document.getElementById('sidebar');
-  const overlay   = document.getElementById('sidebarOverlay');
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebarOverlay');
   const hamburger = document.getElementById('hamburger');
 
   hamburger?.addEventListener('click', () => {
