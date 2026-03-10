@@ -25,6 +25,13 @@ const ticketSchema = new mongoose.Schema({
   assigned_to: { type: String, default: null }, // agent user id
   messages: [messageSchema],
   events: [eventSchema],
+  attachments: [{
+    url: String,
+    public_id: String,
+    original_name: String,
+    size: Number,
+    uploaded_at: { type: Date, default: Date.now }
+  }]
 }, { timestamps: true });
 
 // Index for fast workspace queries
