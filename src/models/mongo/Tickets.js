@@ -20,9 +20,15 @@ const ticketSchema = new mongoose.Schema({
   subject: { type: String, required: true },
   description: { type: String, required: true },
   type: { type: String, enum: ['P','Q','R','S'], required: true },
-  status: { type: String, enum: ['OPEN','IN_PROGRESS','RESOLVED','CLOSED'], default: 'OPEN' },
+  status: { type: String, enum: ['OPEN','IN_PROGRESS','RESOLVED','CLOSED','REOPENED'], default: 'OPEN' },
   priority: { type: String, enum: ['LOW','MEDIUM','HIGH'], default: 'MEDIUM' },
   assigned_to: { type: String, default: null }, // agent user id
+  ai_analysis: {
+    category: String,
+    priority: String,
+    suggestedAgentCriteria: String,
+    confidence: Number
+  },
   messages: [messageSchema],
   events: [eventSchema],
   attachments: [{

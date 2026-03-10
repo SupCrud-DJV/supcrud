@@ -29,7 +29,7 @@ export async function renderTickets(container) {
         </div>
 
         <div class="topbar">
-            <span class="topbar-title">🎫 Tickets</span>
+            <span class="topbar-title">Tickets</span>
             <div class="topbar-right">
                 <span class="badge badge-neutral" id="totalCount"></span>
             </div>
@@ -97,11 +97,13 @@ async function loadTickets(page = 1) {
   try {
     const { tickets, pagination } = await api.get(`/tickets?${params}`);
     currentPage = pagination.page;
+    const totalCountEl = document.getElementById('totalCount');
+    if (totalCountEl) totalCountEl.textContent = `Total: ${pagination.total}`;
 
     if (tickets.length === 0) {
       listEl.innerHTML = `
         <div style="text-align:center;padding:48px;color:var(--text-muted);background:var(--bg);border-radius:var(--radius-lg);border:1.5px dashed var(--border);">
-          <div style="font-size:36px;margin-bottom:10px;">🎫</div>
+          
           <p style="font-weight:600;">No tickets found</p>
           <p style="font-size:12px;margin-top:4px;">Try adjusting your filters or create a new ticket</p>
         </div>`;
@@ -127,8 +129,8 @@ async function loadTickets(page = 1) {
               <div style="text-align:right;flex-shrink:0;">
                 <div style="font-size:11px;color:var(--text-muted);">${new Date(t.createdAt).toLocaleDateString('es-CO')}</div>
                 ${t.assigned_to
-                  ? `<div style="font-size:11px;color:var(--success);margin-top:2px;">✅ Assigned</div>`
-                  : `<div style="font-size:11px;color:var(--warning);margin-top:2px;">⚠️ Unassigned</div>`}
+                  ? `<div style="font-size:11px;color:var(--success);margin-top:2px;">Assigned</div>`
+                  : `<div style="font-size:11px;color:var(--warning);margin-top:2px;">Unassigned</div>`}
               </div>
             </div>
           </div>`).join('')}

@@ -40,6 +40,15 @@ const User = {
       [userId, workspaceId]
     );
     return rows[0]?.role || null;
+  },
+
+  async addToWorkspace(userId, workspaceId, role = 'AGENT') {
+    await db.query(
+      `INSERT INTO workspace_users (user_id, workspace_id, role)
+       VALUES ($1, $2, $3)
+       ON CONFLICT (user_id, workspace_id) DO UPDATE SET role = EXCLUDED.role`,
+      [userId, workspaceId, role]
+    );
   }
 
 };

@@ -82,6 +82,19 @@ async function setup() {
       FOREIGN KEY (workspace_id) REFERENCES workspaces(id) ON DELETE CASCADE
     );
 
+    CREATE TABLE IF NOT EXISTS workspace_invites (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      workspace_id UUID REFERENCES workspaces(id) ON DELETE CASCADE,
+      email VARCHAR(120) NOT NULL,
+      token VARCHAR(255) NOT NULL UNIQUE,
+      role VARCHAR(20) NOT NULL DEFAULT 'AGENT',
+      status VARCHAR(20) NOT NULL DEFAULT 'PENDING' CHECK (status IN ('PENDING','ACCEPTED','EXPIRED','CANCELLED')),
+      expires_at TIMESTAMP NOT NULL,
+      accepted_at TIMESTAMP,
+      accepted_user_id INT,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
     CREATE TABLE IF NOT EXISTS addons (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       code VARCHAR(50) UNIQUE NOT NULL,

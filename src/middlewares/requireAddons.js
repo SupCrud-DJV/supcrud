@@ -1,6 +1,6 @@
 import db from "../config/db.js";
 
-export function requireAddon(addonCode) {
+export default function requireAddon(addonCode) {
   return async (req, res, next) => {
     const workspaceId = req.workspace?.id;
     if (!workspaceId) return res.status(400).json({ message: "Workspace not specified" });

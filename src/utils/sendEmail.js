@@ -1,20 +1,28 @@
 import nodemailer from "nodemailer";
 
-const canSendEmail = Boolean(process.env.EMAIL_FROM && process.env.EMAIL_API_KEY);
+const SMTP_HOST = process.env.SMTP_HOST || "smtp-relay.sendinblue.com";
+const SMTP_PORT = Number(process.env.SMTP_PORT || 587);
+const SMTP_USER = process.env.SMTP_USER || process.env.EMAIL_FROM;
+const SMTP_PASS = process.env.SMTP_PASS || process.env.EMAIL_API_KEY;
+const SMTP_SECURE = String(process.env.SMTP_SECURE || "").toLowerCase() === "true" || SMTP_PORT === 465;
+const MAIL_FROM = process.env.EMAIL_FROM || SMTP_USER;
+
+const canSendEmail = Boolean(SMTP_HOST && SMTP_USER && SMTP_PASS);
 
 let transporter = null;
 if (canSendEmail) {
   transporter = nodemailer.createTransport({
-    host: "smtp-relay.sendinblue.com",
-    port: 587,
+    host: SMTP_HOST,
+    port: SMTP_PORT,
+    secure: SMTP_SECURE,
     auth: {
-      user: process.env.EMAIL_FROM,
-      pass: process.env.EMAIL_API_KEY,
+      user: SMTP_USER,
+      pass: SMTP_PASS,
     },
   });
 } else {
   console.warn(
-    "⚠️  EMAIL_FROM / EMAIL_API_KEY not set. Email sending is disabled."
+    "Email sending is disabled. Configure SMTP_USER/SMTP_PASS (or EMAIL_FROM/EMAIL_API_KEY)."
   );
 }
 
@@ -27,7 +35,7 @@ export async function sendEmail({ to, subject, text, html }) {
   }
 
   await transporter.sendMail({
-    from: process.env.EMAIL_FROM,
+    from: MAIL_FROM,
     to,
     subject,
     text,

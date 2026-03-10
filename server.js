@@ -10,8 +10,11 @@ import workspaceRoutes from './src/routes/workspace.routes.js';
 import userRoutes from './src/routes/user.routes.js';
 import ticketRoutes from './src/routes/ticket.routes.js';
 import publicRoutes from './src/routes/public.routes.js';
+import agentRoutes from './src/routes/agent.routes.js';
 import ownerRoutes from './src/routes/owner.routes.js';
 import connectMongo from './src/config/mongo.js';
+import { setupSwagger } from './src/config/swagger.js';
+import { sendEmail } from './src/utils/sendEmail.js';
 
 import { fileURLToPath } from 'url';
 import { dirname }       from 'path';
@@ -75,7 +78,39 @@ app.use('/api/auth', googleRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/tickets', ticketRoutes);
 app.use('/api/public', publicRoutes);
+app.use('/api/agents', agentRoutes);
 app.use('/api/owner', ownerRoutes);
+
+// SMTP smoke-test endpoint (temporary)
+app.get('/api/test-email', async (req, res) => {
+  const to = String(req.query.to || process.env.SMTP_USER || '').trim();
+  if (!to) {
+    return res.status(400).json({ message: 'Missing recipient. Use ?to=you@example.com or set SMTP_USER.' });
+  }
+
+  try {
+    await sendEmail({
+      to,
+      subject: 'SupCrud SMTP test',
+      text: 'SMTP test email from SupCrud by Crudzaso.',
+    });
+    return res.json({ message: 'Test email processed', to });
+  } catch (err) {
+    return res.status(500).json({ message: err.message || 'Failed to send test email' });
+  }
+});
+
+// Swagger API docs
+setupSwagger(app);
+
+// Ensure API errors are always JSON (avoids HTML error pages in frontend fetch).
+app.use((err, req, res, next) => {
+  console.error(err);
+  if (req.originalUrl?.startsWith('/api')) {
+    return res.status(err.status || 500).json({ message: err.message || 'Server error' });
+  }
+  return res.status(err.status || 500).send('Server error');
+});
 
 const PORT = process.env.PORT || 3000;
 

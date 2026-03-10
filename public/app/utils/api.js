@@ -12,10 +12,6 @@ async function request(method, path, body = null) {
   const workspace = Auth.getWorkspace();
   if (workspace) headers['x-workspace-id'] = workspace.id;
 
-  // ✅ Always send workspace id so backend knows which workspace
-  const workspace = Auth.getWorkspace();
-  if (workspace) headers['x-workspace-id'] = workspace.id;
-
   const options = { method, headers };
   if (body) options.body = JSON.stringify(body);
 
@@ -27,9 +23,18 @@ async function request(method, path, body = null) {
     return;
   }
 
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.message || 'Request failed');
-  return data;
+  const contentType = res.headers.get('content-type') || '';
+  const isJson = contentType.includes('application/json');
+  const payload = isJson ? await res.json() : await res.text();
+
+  if (!res.ok) {
+    const message = isJson
+      ? (payload?.message || 'Request failed')
+      : `Request failed (${res.status}). Backend returned non-JSON response.`;
+    throw new Error(message);
+  }
+
+  return payload;
 }
 
 export const api = {

@@ -16,6 +16,19 @@ CREATE TABLE addons (
     created_at TIMESTAMP DEFAULT NOW()
 );
 
+CREATE TABLE workspace_invites (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    workspace_id UUID REFERENCES workspaces(id),
+    email VARCHAR(120) NOT NULL,
+    token VARCHAR(255) NOT NULL UNIQUE,
+    role VARCHAR(20) NOT NULL DEFAULT 'AGENT',
+    status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
+    expires_at TIMESTAMP NOT NULL,
+    accepted_at TIMESTAMP,
+    accepted_user_id INT,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
 CREATE TABLE workspace_addons (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     workspace_id UUID REFERENCES workspaces(id),

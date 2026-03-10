@@ -98,7 +98,8 @@ const Workspace = {
     if (activate) {
       await db.query(
         `INSERT INTO workspace_addons (workspace_id, addon_id)
-         VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+         VALUES ($1, $2)
+         ON CONFLICT (workspace_id, addon_id) DO UPDATE SET active = true`,
         [workspaceId, addonId]
       );
     } else {

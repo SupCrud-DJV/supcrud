@@ -11,6 +11,9 @@ import { renderUserProfile } from './pages/userProfile.js';
 import { renderWorkspaceSettings } from './pages/workspaceSettings.js';
 import { renderTickets } from './pages/tickets.js';
 import { renderTicketDetail } from './pages/ticketDetails.js';
+import { renderAgents } from './pages/agents.js';
+import { renderOwnerWorkspaces } from './pages/ownerWorkspaces.js';
+import { renderOwnerAddons } from './pages/ownerAddons.js';
 
 const routes = {
   '#/'                   : renderLanding,
@@ -19,8 +22,12 @@ const routes = {
   '#/auth/callback'      : renderAuthCallback,
   '#/select-workspace'   : renderWorkspaceSelector,
   '#/owner'              : renderOwnerDashboard,
+  '#/owner/workspaces'   : renderOwnerWorkspaces,
+  '#/owner/addons'       : renderOwnerAddons,
   '#/dashboard'          : renderWorkspaceDashboard,
   '#/dashboard/tickets'  : renderTickets,          
+  '#/dashboard/agents'   : renderAgents,
+  '#/dashboard/addons'   : renderWorkspaceSettings,
   '#/dashboard/settings' : renderWorkspaceSettings,
   '#/profile'            : renderUserProfile,
 };
@@ -29,7 +36,13 @@ const routes = {
 const protectedRoutes = [
   '#/select-workspace',
   '#/owner',
+  '#/owner/workspaces',
+  '#/owner/addons',
   '#/dashboard',
+  '#/dashboard/tickets',
+  '#/dashboard/agents',
+  '#/dashboard/addons',
+  '#/dashboard/settings',
   '#/profile',
   '#/tickets/',        
 ];
@@ -79,6 +92,7 @@ function normalizeHash(hash) {
   if (!hash) return '#/';
   let normalized = hash.toString().trim();
   if (!normalized.startsWith('#')) normalized = `#${normalized}`;
+  normalized = normalized.split('?')[0];
   // Remove trailing slashes (but keep '#/' for root)
   if (normalized !== '#/') {
     normalized = normalized.replace(/\/+$/, '');
