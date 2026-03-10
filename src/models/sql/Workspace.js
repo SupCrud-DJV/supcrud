@@ -2,6 +2,13 @@ import db from '../../config/db.js';
 
 const Workspace = {
 
+  async findAll() {
+    const { rows } = await db.query(
+      'SELECT * FROM workspaces ORDER BY created_at DESC'
+    );
+    return rows;
+  },
+
   async findByUserId(userId) {
     const { rows } = await db.query(`
       SELECT w.*, wu.role
@@ -52,6 +59,14 @@ const Workspace = {
     const { rows } = await db.query(
       `UPDATE workspaces SET name = $1 WHERE id = $2 RETURNING *`,
       [name, id]
+    );
+    return rows[0];
+  },
+
+  async updateStatus(id, status) {
+    const { rows } = await db.query(
+      `UPDATE workspaces SET status = $1 WHERE id = $2 RETURNING *`,
+      [status, id]
     );
     return rows[0];
   },
