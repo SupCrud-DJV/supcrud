@@ -1,60 +1,34 @@
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
 
-const MessageSchema = new mongoose.Schema(
-  {
-    sender: {
-      id: String,
-      name: String,
-      role: String,
-    },
-    content: { type: String, required: true },
-    createdAt: { type: Date, default: () => new Date() },
-  },
-  { _id: false }
-);
+const eventSchema = new mongoose.Schema({
+  type: { type: String, required: true },
+  description: { type: String },
+  created_by: { type: Number }, // user id from PostgreSQL
+  created_at: { type: Date, default: Date.now }
+});
 
-const EventSchema = new mongoose.Schema(
-  {
-    type: { type: String, required: true },
-    data: { type: mongoose.Schema.Types.Mixed },
-    createdAt: { type: Date, default: () => new Date() },
-  },
-  { _id: false }
-);
+const messageSchema = new mongoose.Schema({
+  content: { type: String, required: true },
+  created_by: { type: Number, required: true }, // user id from PostgreSQL
+  created_at: { type: Date, default: Date.now }
+});
 
-const AttachmentSchema = new mongoose.Schema(
-  {
-    url: String,
-    publicId: String,
-    filename: String,
-    size: Number,
-    uploadedAt: { type: Date, default: () => new Date() },
-  },
-  { _id: false }
-);
+const ticketSchema = new mongoose.Schema({
+  workspace_id: { type: String, required: true },
+  reference_code: { type: String, required: true, unique: true },
+  email: { type: String, required: true },
+  subject: { type: String, required: true },
+  description: { type: String, required: true },
+  type: { type: String, enum: ['P','Q','R','S'], required: true },
+  status: { type: String, enum: ['OPEN','IN_PROGRESS','RESOLVED','CLOSED'], default: 'OPEN' },
+  priority: { type: String, enum: ['LOW','MEDIUM','HIGH'], default: 'MEDIUM' },
+  assigned_to: { type: String, default: null }, // agent user id
+  messages: [messageSchema],
+  events: [eventSchema],
+}, { timestamps: true });
 
-const TicketSchema = new mongoose.Schema(
-  {
-    referenceCode: { type: String, required: true, unique: true, index: true },
-    workspaceKey: { type: String, required: true, index: true },
-    email: { type: String, required: true },
-    subject: { type: String, required: true },
-    description: { type: String, required: true },
-    type: { type: String, enum: ["P", "Q", "R", "S"], required: true },
+// Index for fast workspace queries
+ticketSchema.index({ workspace_id: 1, status: 1 });
 
-    status: {
-      type: String,
-      enum: ["OPEN", "IN_PROGRESS", "RESOLVED", "CLOSED", "REOPENED"],
-      default: "OPEN",
-    },
-    priority: { type: String, enum: ["LOW", "MEDIUM", "HIGH"], default: "MEDIUM" },
-    assignedAgentId: { type: String, default: null },
 
-    messages: { type: [MessageSchema], default: [] },
-    events: { type: [EventSchema], default: [] },
-    attachments: { type: [AttachmentSchema], default: [] },
-  },
-  { timestamps: true }
-);
-
-export default mongoose.models.Ticket || mongoose.model("Ticket", TicketSchema);
+export default mongoose.model('Ticket', ticketSchema);

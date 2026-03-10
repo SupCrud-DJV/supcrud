@@ -1,29 +1,22 @@
-import { Router } from "express";
-import authMiddleware from "../middlewares/auth.js";
-import checkWorkspace from "../middlewares/checkWorkspace.js";
+import { Router }        from 'express';
+import authMiddleware    from '../middlewares/auth.js';
 import {
+  getTickets, getTicket,
   createPublicTicket,
-  listTickets,
-  getTicket,
-  addMessage,
-  updateStatus,
-  assignAgent,
-} from "../controllers/ticket.controller.js";
+  updateStatus, assignTicket,
+  addMessage
+} from '../controllers/ticket.controller.js';
 
 const router = Router();
 
-// Public
-router.post("/", createPublicTicket);
-router.post("/public", createPublicTicket);
+// Public — no auth (from widget)
+router.post('/public', createPublicTicket);
 
-// Workspace-protected ticket APIs
-router.use(authMiddleware);
-router.use(checkWorkspace);
-
-router.get("/", listTickets);
-router.get("/:id", getTicket);
-router.post("/:id/messages", addMessage);
-router.patch("/:id/status", updateStatus);
-router.patch("/:id/assign", assignAgent);
+// Protected
+router.get ('/',              authMiddleware, getTickets);
+router.get ('/:id',           authMiddleware, getTicket);
+router.put ('/:id/status',    authMiddleware, updateStatus);
+router.put ('/:id/assign',    authMiddleware, assignTicket);
+router.post('/:id/messages',  authMiddleware, addMessage);
 
 export default router;

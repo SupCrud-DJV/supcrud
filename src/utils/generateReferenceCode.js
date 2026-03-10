@@ -1,27 +1,14 @@
-import Ticket from "../models/mongo/Tickets.js";
-
-const CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-
-function randomString(length) {
-  let result = "";
-  for (let i = 0; i < length; i++) {
-    result += CHARS.charAt(Math.floor(Math.random() * CHARS.length));
-  }
-  return result;
-}
+import Ticket from '../models/mongo/Tickets.js';
 
 export async function generateReferenceCode(workspaceKey) {
-  const prefix = (workspaceKey || "SUP")
-    .toString()
-    .toUpperCase()
-    .replace(/[^A-Z0-9]/g, "")
-    .slice(0, 3);
+  const prefix = workspaceKey.slice(0, 6).toUpperCase().replace(/-/g, '');
+  let code, exists;
 
-  for (let i = 0; i < 5; i++) {
-    const code = `${prefix}-${randomString(6)}`;
-    const exists = await Ticket.findOne({ referenceCode: code }).lean();
-    if (!exists) return code;
-  }
+  do {
+    const random = Math.random().toString(36).slice(2, 7).toUpperCase();
+    code   = `${prefix}-${random}`;
+    exists = await Ticket.findOne({ reference_code: code });
+  } while (exists);
 
-  throw new Error("No se pudo generar un referenceCode único. Intenta de nuevo.");
+  return code;
 }

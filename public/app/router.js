@@ -9,26 +9,30 @@ import { renderAuthCallback } from './pages/authCallback.js';
 import { renderRegister } from './pages/register.js';
 import { renderUserProfile } from './pages/userProfile.js';
 import { renderWorkspaceSettings } from './pages/workspaceSettings.js';
+import { renderTickets } from './pages/tickets.js';
+import { renderTicketDetail } from './pages/ticketDetails.js';
 
-// add to your routes object
 const routes = {
-  '#/'                  : renderLanding,
-  '#/login'             : renderLogin,
-  '#/register'         : renderRegister,    
-  '#/auth/callback'     : renderAuthCallback,   
-  '#/select-workspace'  : renderWorkspaceSelector,
-  '#/owner'             : renderOwnerDashboard,
-  '#/dashboard'         : renderWorkspaceDashboard,
-  '#/profile'          : renderUserProfile, 
-  '#/dashboard/settings'    : renderWorkspaceSettings, 
+  '#/'                   : renderLanding,
+  '#/login'              : renderLogin,
+  '#/register'           : renderRegister,
+  '#/auth/callback'      : renderAuthCallback,
+  '#/select-workspace'   : renderWorkspaceSelector,
+  '#/owner'              : renderOwnerDashboard,
+  '#/dashboard'          : renderWorkspaceDashboard,
+  '#/dashboard/tickets'  : renderTickets,          
+  '#/dashboard/settings' : renderWorkspaceSettings,
+  '#/profile'            : renderUserProfile,
 };
 
 // Routes that require login
-const protectedRoutePrefixes = ['#/select-workspace', '#/owner', '#/dashboard', '#/profile'];
-
-function normalizeHash(hash) {
-  return (hash || '#/').split('?')[0];
-}
+const protectedRoutes = [
+  '#/select-workspace',
+  '#/owner',
+  '#/dashboard',
+  '#/profile',
+  '#/tickets/',        
+];
 
 export function initRouter() {
   window.addEventListener('hashchange', handleRoute);
@@ -38,27 +42,28 @@ export function initRouter() {
 function handleRoute() {
   const hash = normalizeHash(window.location.hash);
   const app  = document.getElementById('app');
-  const isProtected = protectedRoutePrefixes.some(prefix =>
-    hash === prefix || hash.startsWith(`${prefix}/`)
-  );
+  const protectedRoutePrefixes = protectedRoutes;
 
-  // Guard: protected routes
-  if (isProtected && !Auth.isLoggedIn()) {
+  if (protectedRoutes.some(r => hash.startsWith(r)) && !Auth.isLoggedIn()) {
     window.location.hash = '#/login';
     return;
   }
 
-  // Guard: already logged in, redirect away from login
   if (hash === '#/login' && Auth.isLoggedIn()) {
     const workspace = Auth.getWorkspace();
     window.location.hash = workspace ? '#/dashboard' : '#/select-workspace';
     return;
   }
 
-  const render = routes[hash];
+  if (hash.startsWith('#/tickets/')) {
+    renderLoader(app);
+    setTimeout(() => renderTicketDetail(app), 100);
+    return;
+  }
 
+  const render = routes[hash];
   if (render) {
-    renderLoader(app); // show loader briefly
+    renderLoader(app);
     setTimeout(() => render(app), 100);
   } else {
     app.innerHTML = `
@@ -68,6 +73,17 @@ function handleRoute() {
         <a href="#/" class="btn btn-primary btn-sm" style="margin-top:12px">Go home</a>
       </div>`;
   }
+}
+
+function normalizeHash(hash) {
+  if (!hash) return '#/';
+  let normalized = hash.toString().trim();
+  if (!normalized.startsWith('#')) normalized = `#${normalized}`;
+  // Remove trailing slashes (but keep '#/' for root)
+  if (normalized !== '#/') {
+    normalized = normalized.replace(/\/+$/, '');
+  }
+  return normalized;
 }
 
 export function navigate(hash) {

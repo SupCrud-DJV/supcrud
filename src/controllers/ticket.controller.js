@@ -1,102 +1,131 @@
-import Ticket from "../models/mongo/Tickets.js";
-import OTP from "../models/mongo/OTP.js";
-import { generateReferenceCode } from "../utils/generateReferenceCode.js";
-import { generateOTP, verifyOTP } from "../utils/generateOTP.js";
-import { sendOTP, sendTicketCreated } from "../utils/sendEmail.js";
-import Workspace from "../models/sql/Workspace.js";
+import Ticket from '../models/mongo/Tickets.js';
+import OTP from '../models/mongo/OTP.js';
+import Workspace from '../models/sql/Workspace.js';
+import { generateReferenceCode } from '../utils/generateReferenceCode.js';
+import { generateOTP, verifyOTP } from '../utils/generateOTP.js';
+import { sendOTP, sendTicketCreated } from '../utils/sendEmail.js';
 
-const OTP_TTL_MINUTES = 10;
-const OTP_MAX_ATTEMPTS = 5;
+const VALID_TICKET_TYPES = ['P', 'Q', 'R', 'S'];
+const VALID_STATUS = ['OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED'];
 
-function normalizeString(str) {
-  return (str || "").trim();
-}
+// ── GET /api/tickets?page=1&limit=10&status=OPEN&type=P ──
+export const getTickets = async (req, res) => {
+  try {
+    const { status, type, priority, page = 1, limit = 10 } = req.query;
+    const workspace = Auth_getWorkspace(req);
 
-export async function createPublicTicket(req, res) {
+    const filter = { workspace_id: workspace.id };
+    if (status)   filter.status   = status;
+    if (type)     filter.type     = type;
+    if (priority) filter.priority = priority;
+
+    const skip  = (page - 1) * limit;
+    const total = await Ticket.countDocuments(filter);
+    const tickets = await Ticket.find(filter)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(Number(limit))
+      .select('-messages -events'); // exclude heavy fields from list
+
+    res.json({
+      tickets,
+      pagination: {
+        total,
+        page:       Number(page),
+        limit:      Number(limit),
+        totalPages: Math.ceil(total / limit)
+      }
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// ── GET /api/tickets/:id ──
+export const getTicket = async (req, res) => {
+  try {
+    const ticket = await Ticket.findById(req.params.id);
+    if (!ticket) return res.status(404).json({ message: 'Ticket not found' });
+    res.json({ ticket });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// ── POST /api/tickets/public ── (from widget, no auth)
+export const createPublicTicket = async (req, res) => {
   try {
     const { workspaceKey, email, subject, description, type } = req.body;
 
-    if (!workspaceKey || !email || !subject || !description || !type) {
-      return res.status(400).json({ message: "Missing required fields" });
+    if (!workspaceKey || !email || !subject || !description || !type)
+      return res.status(400).json({ message: 'All fields are required' });
+
+    const normalizedType = (type || '').toUpperCase();
+    if (!VALID_TICKET_TYPES.includes(normalizedType)) {
+      return res.status(400).json({ message: 'Invalid ticket type' });
     }
 
     const workspace = await Workspace.findByKey(workspaceKey);
-    if (!workspace) {
-      return res.status(404).json({ message: "Workspace not found" });
-    }
-
-    if (workspace.status !== "ACTIVE") {
-      return res.status(403).json({ message: "Workspace is not active" });
-    }
-
-    const normalizedType = type.toUpperCase();
-    if (!["P", "Q", "R", "S"].includes(normalizedType)) {
-      return res.status(400).json({ message: "Invalid ticket type" });
-    }
+    if (!workspace || workspace.status !== 'ACTIVE')
+      return res.status(403).json({ message: 'Workspace not found or suspended' });
 
     const referenceCode = await generateReferenceCode(workspace.workspace_key);
 
     const ticket = await Ticket.create({
-      workspaceKey: workspace.workspace_key,
-      referenceCode,
-      email: normalizeString(email),
-      subject: normalizeString(subject),
-      description: normalizeString(description),
+      workspace_id: String(workspace.id),
+      reference_code: referenceCode,
+      email,
+      subject,
+      description,
       type: normalizedType,
-      events: [
-        {
-          type: "TICKET_CREATED",
-          data: {
-            workspaceKey: workspace.workspace_key,
-            email,
-            type: normalizedType,
-          },
-        },
-      ],
+      events: [{ type: 'CREATED', description: 'Ticket created' }],
     });
 
-    sendTicketCreated(ticket.email, ticket.referenceCode).catch(() => {});
+    // Send optional notification email (no-op if not configured)
+    sendTicketCreated(email, referenceCode).catch(() => {});
 
-    return res.status(201).json({ referenceCode: ticket.referenceCode });
+    return res.status(201).json({ referenceCode });
   } catch (err) {
     console.error(err);
-    return res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: 'Server error' });
   }
-}
+};
 
-export async function getPublicTicket(req, res) {
+// ── GET /api/tickets/public/:referenceCode ──
+export const getPublicTicket = async (req, res) => {
   try {
     const { referenceCode } = req.params;
-    const ticket = await Ticket.findOne({ referenceCode }).lean();
-    if (!ticket) return res.status(404).json({ message: "Ticket not found" });
+    const ticket = await Ticket.findOne({ reference_code: referenceCode }).lean();
+    if (!ticket) return res.status(404).json({ message: 'Ticket not found' });
 
     return res.json({
-      referenceCode: ticket.referenceCode,
+      referenceCode: ticket.reference_code,
       status: ticket.status,
       createdAt: ticket.createdAt,
       updatedAt: ticket.updatedAt,
-      workspaceKey: ticket.workspaceKey,
+      workspaceId: ticket.workspace_id,
       subject: ticket.subject,
       type: ticket.type,
     });
   } catch (err) {
     console.error(err);
-    return res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: 'Server error' });
   }
-}
+};
 
-export async function requestOtp(req, res) {
+// ── POST /api/tickets/public/request-otp ──
+export const requestOtp = async (req, res) => {
   try {
     const { referenceCode, email } = req.body;
-    if (!referenceCode || !email) {
-      return res.status(400).json({ message: "referenceCode and email are required" });
-    }
+    if (!referenceCode || !email)
+      return res.status(400).json({ message: 'referenceCode and email are required' });
 
-    const ticket = await Ticket.findOne({ referenceCode });
-    if (!ticket) return res.status(404).json({ message: "Ticket not found" });
+    const ticket = await Ticket.findOne({ reference_code: referenceCode });
+    if (!ticket) return res.status(404).json({ message: 'Ticket not found' });
 
     if (ticket.email.toLowerCase() !== email.toLowerCase()) {
-      return res.status(403).json({ message: "Email does not match" });
+      return res.status(403).json({ message: 'Email does not match' });
     }
 
     const { code, hash, expiresAt } = generateOTP();
@@ -116,180 +145,152 @@ export async function requestOtp(req, res) {
 
     await sendOTP(ticket.email, code).catch(() => {});
 
-    return res.json({ message: "OTP sent" });
+    return res.json({ message: 'OTP sent' });
   } catch (err) {
     console.error(err);
-    return res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: 'Server error' });
   }
-}
+};
 
-export async function verifyOtp(req, res) {
+// ── POST /api/tickets/public/verify-otp ──
+export const verifyOtp = async (req, res) => {
   try {
     const { referenceCode, code } = req.body;
-    if (!referenceCode || !code) {
-      return res.status(400).json({ message: "referenceCode and code are required" });
-    }
+    if (!referenceCode || !code)
+      return res.status(400).json({ message: 'referenceCode and code are required' });
 
     const otp = await OTP.findOne({ ticketReferenceCode: referenceCode });
-    if (!otp) return res.status(404).json({ message: "OTP not found" });
+    if (!otp) return res.status(404).json({ message: 'OTP not found' });
 
-    if (otp.used) return res.status(400).json({ message: "OTP already used" });
+    if (otp.used) return res.status(400).json({ message: 'OTP already used' });
 
-    if (otp.attempts >= OTP_MAX_ATTEMPTS) {
-      return res.status(429).json({ message: "Max OTP attempts exceeded" });
+    if (otp.attempts >= 5) {
+      return res.status(429).json({ message: 'Max OTP attempts exceeded' });
     }
 
     if (otp.expiresAt < new Date()) {
-      return res.status(400).json({ message: "OTP expired" });
+      return res.status(400).json({ message: 'OTP expired' });
     }
 
     const valid = await verifyOTP(code, otp.codeHash);
     if (!valid) {
       otp.attempts += 1;
       await otp.save();
-      return res.status(401).json({ message: "Invalid OTP" });
+      return res.status(401).json({ message: 'Invalid OTP' });
     }
 
     otp.used = true;
     await otp.save();
 
-    const ticket = await Ticket.findOne({ referenceCode }).lean();
-    if (!ticket) return res.status(404).json({ message: "Ticket not found" });
+    const ticket = await Ticket.findOne({ reference_code: referenceCode }).lean();
+    if (!ticket) return res.status(404).json({ message: 'Ticket not found' });
 
     return res.json({
-      referenceCode: ticket.referenceCode,
+      referenceCode: ticket.reference_code,
       status: ticket.status,
       createdAt: ticket.createdAt,
       updatedAt: ticket.updatedAt,
-      workspaceKey: ticket.workspaceKey,
+      workspaceId: ticket.workspace_id,
       subject: ticket.subject,
       description: ticket.description,
       type: ticket.type,
       priority: ticket.priority,
-      assignedAgentId: ticket.assignedAgentId,
+      assignedAgentId: ticket.assigned_to,
       messages: ticket.messages,
       events: ticket.events,
-      attachments: ticket.attachments,
     });
   } catch (err) {
     console.error(err);
-    return res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: 'Server error' });
   }
-}
+};
 
-export async function listTickets(req, res) {
+// ── PUT /api/tickets/:id/status ──
+export const updateStatus = async (req, res) => {
   try {
-    const { status, type, assignedAgentId, page = 1, pageSize = 20 } = req.query;
-    const workspaceKey = req.workspace.workspace_key;
-
-    const filter = { workspaceKey };
-    if (status) filter.status = status;
-    if (type) filter.type = type;
-    if (assignedAgentId) filter.assignedAgentId = assignedAgentId;
-
-    const tickets = await Ticket.find(filter)
-      .sort({ createdAt: -1 })
-      .skip((Number(page) - 1) * Number(pageSize))
-      .limit(Number(pageSize))
-      .lean();
-
-    const total = await Ticket.countDocuments(filter);
-
-    return res.json({ tickets, total });
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({ message: "Server error" });
-  }
-}
-
-export async function getTicket(req, res) {
-  try {
-    const { id } = req.params;
-    const workspaceKey = req.workspace.workspace_key;
-
-    const ticket = await Ticket.findOne({ _id: id, workspaceKey }).lean();
-    if (!ticket) return res.status(404).json({ message: "Ticket not found" });
-
-    return res.json({ ticket });
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({ message: "Server error" });
-  }
-}
-
-export async function addMessage(req, res) {
-  try {
-    const { id } = req.params;
-    const { content } = req.body;
-    const workspaceKey = req.workspace.workspace_key;
-
-    if (!content) return res.status(400).json({ message: "Content is required" });
-
-    const ticket = await Ticket.findOne({ _id: id, workspaceKey });
-    if (!ticket) return res.status(404).json({ message: "Ticket not found" });
-
-    const message = {
-      sender: {
-        id: req.user.id,
-        name: req.user.email,
-        role: req.user.role,
-      },
-      content,
-      createdAt: new Date(),
-    };
-
-    ticket.messages.push(message);
-    ticket.events.push({ type: "MESSAGE_SENT", data: { userId: req.user.id } });
-
-    await ticket.save();
-
-    return res.json({ message });
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({ message: "Server error" });
-  }
-}
-
-export async function updateStatus(req, res) {
-  try {
-    const { id } = req.params;
     const { status } = req.body;
-    const workspaceKey = req.workspace.workspace_key;
 
-    if (!status) return res.status(400).json({ message: "Status is required" });
+    if (!VALID_STATUS.includes(status))
+      return res.status(400).json({ message: 'Invalid status' });
 
-    const ticket = await Ticket.findOne({ _id: id, workspaceKey });
-    if (!ticket) return res.status(404).json({ message: "Ticket not found" });
+    const ticket = await Ticket.findByIdAndUpdate(
+      req.params.id,
+      {
+        status,
+        $push: {
+          events: {
+            type: 'STATUS_CHANGED',
+            description: `Status changed to ${status}`,
+            created_by: req.user.id,
+          },
+        },
+      },
+      { new: true }
+    );
 
-    ticket.status = status;
-    ticket.events.push({ type: "STATUS_CHANGED", data: { status, userId: req.user.id } });
-    await ticket.save();
-
-    return res.json({ status: ticket.status });
+    if (!ticket) return res.status(404).json({ message: 'Ticket not found' });
+    res.json({ ticket });
   } catch (err) {
-    console.error(err);
-    return res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: 'Server error' });
   }
-}
+};
 
-export async function assignAgent(req, res) {
+// ── PUT /api/tickets/:id/assign ──
+export const assignTicket = async (req, res) => {
   try {
-    const { id } = req.params;
     const { agentId } = req.body;
-    const workspaceKey = req.workspace.workspace_key;
 
-    if (!agentId) return res.status(400).json({ message: "agentId is required" });
+    const ticket = await Ticket.findByIdAndUpdate(
+      req.params.id,
+      {
+        assigned_to: agentId,
+        $push: {
+          events: {
+            type:        'ASSIGNED',
+            description: `Ticket assigned to agent ${agentId}`,
+            created_by:  req.user.id
+          }
+        }
+      },
+      { new: true }
+    );
 
-    const ticket = await Ticket.findOne({ _id: id, workspaceKey });
-    if (!ticket) return res.status(404).json({ message: "Ticket not found" });
+    if (!ticket) return res.status(404).json({ message: 'Ticket not found' });
+    res.json({ ticket });
 
-    ticket.assignedAgentId = agentId;
-    ticket.events.push({ type: "AGENT_ASSIGNED", data: { agentId, userId: req.user.id } });
-    await ticket.save();
-
-    return res.json({ assignedAgentId: ticket.assignedAgentId });
   } catch (err) {
-    console.error(err);
-    return res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: 'Server error' });
   }
+};
+
+// ── POST /api/tickets/:id/messages ──
+export const addMessage = async (req, res) => {
+  try {
+    const { content } = req.body;
+    if (!content) return res.status(400).json({ message: 'Content is required' });
+
+    const ticket = await Ticket.findByIdAndUpdate(
+      req.params.id,
+      {
+        $push: {
+          messages: { content, created_by: req.user.id },
+          events:   { type: 'MESSAGE_ADDED', description: 'New reply added', created_by: req.user.id }
+        }
+      },
+      { new: true }
+    );
+
+    if (!ticket) return res.status(404).json({ message: 'Ticket not found' });
+    res.json({ ticket });
+
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// Helper to get workspace from token
+function Auth_getWorkspace(req) {
+  const workspaceId = req.headers['x-workspace-id'];
+  if (!workspaceId) throw new Error('No workspace selected');
+  return { id: workspaceId };
 }
