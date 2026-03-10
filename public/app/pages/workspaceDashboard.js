@@ -1,8 +1,8 @@
-import { Auth }     from '../utils/auth.js';
+import { Auth } from '../utils/auth.js';
 import { navigate } from '../router.js';
 
 export function renderWorkspaceDashboard(container) {
-  const user      = Auth.getUser();
+  const user = Auth.getUser();
   const workspace = Auth.getWorkspace();
 
   container.innerHTML = `
@@ -19,27 +19,25 @@ export function renderWorkspaceDashboard(container) {
         <nav class="sidebar-nav">
           <div class="nav-section-label">Workspace</div>
           ${[
-            { icon: '📊', label: 'Dashboard', route: '#/dashboard' },
-            { icon: '🎫', label: 'Tickets',   route: '#/dashboard/tickets' },
-            { icon: '👥', label: 'Agents',    route: '#/dashboard/agents' },
-            { icon: '🔌', label: 'Add-ons',   route: '#/dashboard/addons' },
-            { icon: '⚙️',  label: 'Settings',  route: '#/dashboard/settings' },
-          ].map(item => `
+      { icon: '📊', label: 'Dashboard', route: '#/dashboard' },
+      { icon: '🎫', label: 'Tickets', route: '#/dashboard/tickets' },
+      { icon: '👥', label: 'Agents', route: '#/dashboard/agents' },
+      { icon: '🔌', label: 'Add-ons', route: '#/dashboard/settings' },
+      { icon: '⚙️', label: 'Settings', route: '#/dashboard/settings' },
+    ].map(item => `
             <button class="nav-item ${window.location.hash === item.route ? 'active' : ''}" data-route="${item.route}">
               ${item.icon} ${item.label}
             </button>`).join('')}
         </nav>
 
         <div class="sidebar-footer">
-          <div class="sidebar-user" id="profileBtn">
+          <div class="sidebar-user" id="profileBtn" style="cursor:pointer;" onclick="window.location.hash='#/profile'">
             <div class="sidebar-avatar">
               ${user?.avatar
-                ? `<img src="${user.avatar}" alt="${user.name}"/>`
-                : (user?.name?.[0] ?? 'U')}
+      ? `<img src="${user.avatar}" alt="${user.name}"/>`
+      : (user?.name?.[0] ?? 'U')}
             </div>
             <div class="sidebar-user-info">
-            
-              <div class="sidebar-user" id="profileBtn" style="cursor:pointer;" onclick="window.location.hash='#/profile'">
               <div class="sidebar-user-name">${user?.name ?? 'User'}</div>
               <div class="sidebar-user-role">${workspace?.role ?? 'Agent'}</div>
             </div>
@@ -70,11 +68,11 @@ export function renderWorkspaceDashboard(container) {
 
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;">
             ${[
-              { label: 'Open Tickets',     value: '—', icon: '📬' },
-              { label: 'In Progress',      value: '—', icon: '⚙️' },
-              { label: 'Resolved Today',   value: '—', icon: '✅' },
-              { label: 'Unassigned',       value: '—', icon: '❓' },
-            ].map(m => `
+      { label: 'Open Tickets', value: '—', icon: '📬' },
+      { label: 'In Progress', value: '—', icon: '⚙️' },
+      { label: 'Resolved Today', value: '—', icon: '✅' },
+      { label: 'Unassigned', value: '—', icon: '❓' },
+    ].map(m => `
               <div class="card" style="display:flex;align-items:center;gap:14px;">
                 <div style="font-size:28px;">${m.icon}</div>
                 <div>
@@ -106,8 +104,8 @@ export function renderWorkspaceDashboard(container) {
 }
 
 function _attachSidebarEvents() {
-  const sidebar   = document.getElementById('sidebar');
-  const overlay   = document.getElementById('sidebarOverlay');
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebarOverlay');
   const hamburger = document.getElementById('hamburger');
   if (!hamburger) return;
   hamburger.addEventListener('click', () => {
